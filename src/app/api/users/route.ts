@@ -1,16 +1,20 @@
+import { connectMongoDB } from '@/config/dbConfig';
+import { UserModel } from '@/models/userModels';
 import { NextRequest, NextResponse } from 'next/server';
 
+connectMongoDB();
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    console.log('request.nextUrl.searchParams', searchParams.getAll('sortBy'));
-    const users = [
-      { id: 1, name: 'John Doe' },
-      { id: 2, name: 'David Miller' },
-      { id: 3, name: 'Alice Johnson' },
-      { id: 4, name: 'Emily Smith' },
-      { id: 5, name: 'Michael Brown' },
-    ];
+    // console.log('request.nextUrl.searchParams', searchParams.getAll('sortBy'));
+    let filters: any = {};
+    if (searchParams.has('name')) {
+      filters.name = searchParams.get('name');
+    }
+    if (searchParams.has('age')) {
+      filters.age = searchParams.get('age');
+    }
+    const users = await UserModel.find(filters);
     return NextResponse.json(
       {
         data: users,
@@ -31,11 +35,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const reqBody = await request.json();
-    console.log('request', reqBody);
+    const newUser = await new UserModel(reqBody);
+    const response = await newUser.save();
     console.log('table name', request.nextUrl.searchParams.get('tablename'));
     return NextResponse.json(
       {
         message: 'user created successfully',
+        data: response,
       },
       { status: 200 }
     );
